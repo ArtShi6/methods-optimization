@@ -1,0 +1,112 @@
+#include <iostream>
+#include <cmath>
+#include <functional>
+
+using namespace std;
+
+double goldenSectionSearch(double a0, double b0, double l, function<double(double)> f) {
+    
+    double a = a0;
+    double b = b0;
+    const double t = (3 - sqrt(5)) / 2; 
+
+    cout << " Шаг 2: Положить k = 0" << endl;
+    int k = 0;
+
+    cout << " Шаг 3: Вычислить y0 и z0:" << endl;
+    double y = a + t * (b - a);
+    double z = a + b - y;
+    cout << "y0=" << y<<endl;
+    cout << "z0=" << z << endl;
+
+    cout << " Шаг 4: Вычислить f(yk) и f(zk):" << endl;
+    double fy = f(y);
+    double fz = f(z);
+    cout << "f(y" << k << ")=" << fy << endl;
+    cout << "f(z" << k << ")=" << fz << endl;
+
+    while (true) {
+        cout << " Шаг 5."<<k<<": Сравнить f(yk) и f(zk):" << endl;
+        if (fy <= fz) {
+            cout << "f(y"<<k<<") <= f(z" << k << "), значит:" << endl;
+            a = a;  // a_{k+1} = a_k
+            b = z;  // b_{k+1} = z_k
+
+            // Вычисляем новые точки
+            double new_y = a + b - y;  // y_{k+1} = a_{k+1} + b_{k+1} - y_k
+            double new_z = y;           // z_{k+1} = y_k
+            cout << "a" << k + 1 << "=" << a << endl;
+            cout << "b" << k + 1 << "=" << b << endl;
+            cout << "y" << k + 1 << "=" << new_y << endl;
+            cout << "z" << k + 1 << "=" << new_z << endl;
+            // Обновляем значения функции для новых точек
+            double new_fy = f(new_y);
+            double new_fz = fy;  // f(z_{k+1}) = f(y_k)
+
+            y = new_y;
+            z = new_z;
+            fy = new_fy;
+            fz = new_fz;
+        }
+        else {
+            cout << "f(y" << k << ") > f(z" << k << "), значит:" << endl;
+            a = y;  // a_{k+1} = y_k
+            b = b;  // b_{k+1} = b_k
+
+            // Вычисляем новые точки
+            double new_y = z;           // y_{k+1} = z_k
+            double new_z = a + b - z;   // z_{k+1} = a_{k+1} + b_{k+1} - z_k
+            cout << "a" << k + 1 << "=" << a << endl;
+            cout << "b" << k + 1 << "=" << b << endl;
+            cout << "y" << k + 1 << "=" << new_y << endl;
+            cout << "z" << k + 1 << "=" << new_z << endl;
+            // Обновляем значения функции для новых точек
+            double new_fy = fz;  // f(y_{k+1}) = f(z_k)
+            double new_fz = f(new_z);
+
+            y = new_y;
+            z = new_z;
+            fy = new_fy;
+            fz = new_fz;
+        }
+
+        cout << " Шаг 6." << k << ": Вычислить дельту и проверить условие окончания:" << endl;
+        double delta = abs(a - b);
+        cout << "delta=" << delta<<endl;
+        
+
+        if (delta <= l) {
+            cout << "delta=" << delta <<" <= l="<<l << endl;
+            // Процесс поиска завершается
+            double x_min = (a + b) / 2;
+            return x_min;
+        }
+        else {
+            cout << "delta=" << delta << " > l=" << l << endl;
+            cout << "Условие окончания не выполнено" << endl;
+            // Продолжаем поиск
+            k = k + 1;
+            // Переход к шагу 4 (начало цикла)
+        }
+    }
+}
+double f(double x) {
+        return ((127.0 / 4.0) * (x * x)) - ((61.0 / 4.0) * x) + 2.0;
+    }
+// Пример использования
+int main() {
+    setlocale(LC_ALL, "russian");
+    double a0 = 0.235;    // Начало интервала
+    double b0 = 0.247;    // Конец интервала
+    double l = abs(a0-b0)/10;    // Точность
+    cout << " Шаг 1: Задан начальный интервал неопределенности и точность:" << endl;
+    cout << "Начальный интервал [a0 , b0] = [" << a0 << "," << b0 <<"]"<<endl;
+    cout << "Начальная точность l = " << l<< endl;
+
+    double result = goldenSectionSearch(a0, b0, l, f);
+
+    cout << "Найденный минимум: x = " << result << endl;
+    cout << "Значение функции: f(x) = " << f(result) << endl;
+
+    return 0;
+}
