@@ -1,0 +1,103 @@
+#include <iostream>
+#include <cmath>
+using namespace std;
+
+double f(double x) {
+    return ((127.0/4.0)*(x*x))-((61.0/4.0)*x)+2.0;
+}
+
+int main() {
+    setlocale(LC_ALL,"russian");
+    // Шаг 1: задаем параметры
+    double x0 = 0.25;     // начальная точка
+    double t = 0.001;      // шаг (t > 0)
+    int k = 0;
+
+    cout << "Шаг 1.0: x0 = " << x0 << ", t = " << t << ", k = " << k << endl;
+
+    // Шаг 2: вычисляем функцию в трех точках
+    double f_left = f(x0 - t);
+    double f_center = f(x0);
+    double f_right = f(x0 + t);
+
+    cout << "Шаг 2.0: f(x0-t)=" << f_left << ", f(x0)=" << f_center << ", f(x0+t)=" << f_right << endl;
+
+    // Шаг 3: проверяем условие окончания
+    if (f_left >= f_center && f_center <= f_right) {
+        // Случай а): интервал найден сразу
+        double a0 = x0 - t;
+        double b0 = x0 + t;
+        cout << "Шаг 3.0(а): Интервал найден: [" << a0 << ", " << b0 << "]" << endl;
+        return 0;
+    }
+    else if (f_left <= f_center && f_center >= f_right) {
+        // Случай б): функция не унимодальна
+        cout << "Шаг 3.0(б): Функция не унимодальна! Требуется задать другую начальную точку" << endl;
+        return 0;
+    }
+
+    cout << "Шаг 3.0: Условия окончания не выполненены, идем к шагу 4" << endl;
+
+    // Шаг 4:
+    double delta;
+    double a0, b0;
+    double xk;
+
+    if (f_left >= f_center && f_center >= f_right) {
+        delta = t;
+        a0 = x0;
+        xk = x0 + t;
+        cout << "Шаг 4.0(а): delta = " << delta << ", a0=" << a0 << ", x1=" << xk << endl;
+    }
+    else {
+        delta = -t;
+        b0 = x0;
+        xk = x0 - t;
+        cout << "Шаг 4.0(б): delta = " << delta << ", b0=" << b0 << ", x1=" << xk << endl;
+    }
+
+    k = 1;
+
+    while (true) {
+        // Шаг 5: находим следующую точку
+        double x_next = xk + pow(2.0, k) * delta;
+
+        cout << "\nШаг 5."<<k-1<<": x" << k + 1 << " = x" << k << " + 2^" << k << "*delta = "<< xk << " + " << pow(2.0, k) * delta << " = " << x_next << endl;
+
+        double f_curr = f(xk);
+        double f_next = f(x_next);
+
+        cout << "Шаг 6." << k-1<< ": f(x" << k << ")=" << f_curr << ", f(x" << k + 1 << ")=" << f_next << endl;
+
+        // Шаг 6: проверяем условие
+        if (f_next < f_curr) {
+            // Продолжаем движение
+            if (delta > 0) {
+                a0 = xk;
+                cout << "  a0 = x" << k << " = " << a0 << endl;
+            }
+            else {
+                b0 = xk;
+                cout << "  b0 = x" << k << " = " << b0 << endl;
+            }
+
+            xk = x_next;
+            k++;
+        }
+        else {
+            if (delta >= 0) {
+                b0 = x_next;
+                cout << "  b0 = x" << k + 1 << " = " << b0 << endl;
+            }
+            else {
+                a0 = x_next;
+                cout << "  a0 = x" << k + 1 << " = " << a0 << endl;
+            }
+
+            cout << "\nИтоговый интервал: [" << a0 << ", " << b0 << "]" << endl;
+            break;
+        }
+    }
+
+    return 0;
+}
