@@ -1,0 +1,127 @@
+#include <iostream>
+#include <cmath>
+#include <functional>
+#include <iomanip>
+
+using namespace std;
+
+bool golden_section(const function<double(double)>& func, double a0, double b0,
+    double precision, double& result_x) {
+    // Проверка где успела накосячить
+    if (precision <= 0) {
+        cerr << "Убери минус" << endl;
+        return false;
+    }
+    if (a0 >= b0) {
+        cerr << "То, что слево должно быть меньше того, что справа, меняй >:^" << endl;
+        return false;
+    }
+    //Шаг 1
+    double a = a0;
+    double b = b0;
+    //Шаг 2
+    int k = 0;
+    const double con = (3.0 - sqrt(5.0)) / 2.0;//примерно 0.381966 - это так, константа
+    //Шаг 3
+    double y = a + con * (b - a);
+    double z = a + b - y;  
+    //Итерации под наблюдением
+    bool verbose = true;
+
+    if (verbose) {
+        cout << fixed << setprecision(6);
+        cout << "Начальный интервал: [" << a << ", " << b << "]" << endl;
+        cout << "y0 = " << y << ", z0 = " << z << endl;
+        cout << "----------------------------------------" << endl;
+    }
+    // Шаг 4
+    double f_y = func(y);
+    double f_z = func(z);
+    while (true) {
+        // Шаг 5
+        if (f_y <= f_z) {
+            //Шаг 5.а)
+            if (verbose) {
+                cout << "Итерация " << k << ": f(y) = " << f_y << " <= f(z) = " << f_z << endl;
+            }
+            b = z;
+            double new_y = a + b - y;
+            double new_z = y;
+            double new_f_y = func(new_y);
+            double new_f_z = f_y;
+            y = new_y;
+            z = new_z;
+            f_y = new_f_y;
+            f_z = new_f_z;
+        }
+        else {
+            //Шаг 5.б)
+            if (verbose) {
+                cout << "Итерация " << k << ": f(y) = " << f_y << " > f(z) = " << f_z << endl;
+            }
+            a = y;
+            double new_y = z;
+            double new_z = a + b - z;
+            double new_f_y = f_z;
+            double new_f_z = func(new_z);
+            y = new_y;
+            z = new_z;
+            f_y = new_f_y;
+            f_z = new_f_z;
+        }
+
+        //Шаг 6
+        double delta = abs(a - b);
+
+        if (verbose) {
+            cout << "Новый интервал: [" << a << ", " << b << "], длина = " << delta << endl;
+            cout << "Новые точки: y = " << y << ", z = " << z << endl;
+            cout << "----------------------------------------" << endl;
+        }
+        if (delta <= precision) {
+            //Шаг 6.а)
+            result_x = (a + b) / 2.0;
+            if (verbose) {
+                cout << "Нашла нужную точность, радуйся: " << delta << " <= " << precision << endl;
+                cout << "Приближенный минимум в точке x* = " << result_x << endl;
+            }
+            return true;
+        }
+
+        //Шаг 6.б)
+        k++;
+    }
+}
+double func(double x) {
+    return pow(x, 4) + x * x + x + 1;
+}
+
+int main() {
+    setlocale(LC_ALL, "rus");
+    double a0 = -0.4;
+    double b0 = -0.34;
+
+    // Точность
+    double precision = 0.006;
+
+    // Переменная для результата
+    double min_x;
+
+    cout << "Метод золотого сечения для функции f(x)=x^4+x^2+x+1" << endl;
+    cout << "Начальный интервал: [" << a0 << ", " << b0 << "]" << endl;
+    cout << "Точность: " << precision << endl;
+    cout << "=========================================" << endl;
+
+    if (golden_section(func, a0, b0, precision, min_x)) {
+        cout << "=========================================" << endl;
+        cout << "Результат:" << endl;
+        cout << "Найден минимум в точке x = " << min_x << endl;
+        cout << "Значение функции f(x) = " << func(min_x) << endl;
+        cout << "Точный минимум в точке x = 2, f(2) = 1" << endl;
+    }
+    else {
+        cout << "Ошибка при выполнении метода золотого сечения." << endl;
+    }
+
+    return 0;
+}
