@@ -1,0 +1,180 @@
+#include <iostream>
+#include <cmath>
+#include <algorithm>
+#include <vector>
+using namespace std;
+
+double f(double x) {
+    return ((127.0 / 4.0) * (x * x)) - ((61.0 / 4.0) * x) + 2.0;
+}
+
+
+// Шаг 3: Вычисление значений функции
+void computeValues(double x1, double x2, double& f1, double& f2,
+    double (*func)(double)) {
+    f1 = func(x1);
+    f2 = func(x2);
+}
+
+// Шаг 4: Определение x3
+double X3(double x1, double x2, double deltaX, double f1, double f2) {
+    if (f1 > f2) {
+        return x1 + 2 * deltaX;  // случай а
+    }
+    else {
+        return x1 - deltaX;       // случай б
+    }
+}
+
+// Шаг 6: Поиск минимального значения среди трех точек
+void findMin(double x1, double x2, double x3, double f1, double f2, double f3,
+    double& Fmin, double& xmin) {
+    if (f1 <= f2 && f1 <= f3) {
+        Fmin = f1;
+        xmin = x1;
+    }
+    else if (f2 <= f1 && f2 <= f3) {
+        Fmin = f2;
+        xmin = x2;
+    }
+    else {
+        Fmin = f3;
+        xmin = x3;
+    }
+}
+
+// Шаг 7: Вычисление точки минимума интерполяционного полинома
+double computeInterpolationPolinom(double x1, double x2, double x3,
+    double f1, double f2, double f3,
+    double& xBar) {
+    // Проверка знаменателя (если все x равны)
+    if (std::abs(x2 - x1) < 1e-15 || std::abs(x3 - x1) < 1e-15 ||
+        std::abs(x1 - x2) < 1e-15) {
+        return false;  // Интерполяция невозможна - прямая
+    }
+
+    xBar = 0.5 *( ((x2 * x2 - x1 * x1) * f1+ (x3 * x3 - x1 * x1) * f2 + (x1 * x1 - x2 * x2) * f3)/ ((x2 - x1) * f1+ (x3 - x1) * f2+ (x1 - x2) * f3));
+    
+    return true;
+}
+
+// Шаг 8: Проверка условий окончания
+bool checkConvergence(double Fmin, double fBar, double xmin, double xBar,
+    double eps1, double eps2, double& fxBar) {
+    
+    double condition1 = abs((Fmin - fxBar) / fxBar);
+    double condition2 = abs((xmin - xBar) / xBar);
+
+    return (condition1 < eps1 && condition2 < eps2);
+}
+
+int main() {
+    setlocale(LC_ALL, "russian");
+    double x1 = 0.25;           // Начальная точка
+    double deltaX = 0.25;       // Величина шага
+    double eps1 = 0.02;        // Точность для функции
+    double eps2 = 0.05;        // Точность для аргумента
+
+    double x2, x3;
+    double f1, f2, f3;
+    double Fmin, xmin;
+    double xBar;
+    double fxBar;
+
+  
+    double (*func)(double) =f;
+
+    std::cout << "Начало алгоритма поиска минимума\n";
+    std::cout << "Начальная точка x1 = " << x1 << "\n";
+    std::cout << "Шаг deltaX = " << deltaX << "\n";
+    std::cout << "Точность eps1 = " << eps1 << ", eps2 = " << eps2 << "\n\n";
+
+    int iteration = 0;
+    bool converged = false;
+
+    while (!converged) {
+        iteration++;
+        std::cout << "Итерация " << iteration << ":\n";
+
+        // Шаг 2
+        x2 = x1 + deltaX;
+        std::cout << "  x2 = " << x2 << "\n";
+
+        // Шаг 3
+        computeValues(x1, x2, f1, f2, func);
+        std::cout << "  f1 = " << f1 << ", f2 = " << f2 << "\n";
+
+        // Шаг 4
+        x3 = X3(x1, x2, deltaX, f1, f2);
+        std::cout << "  x3 = " << x3 << "\n";
+
+        // Шаг 5
+        f3 = func(x3);
+        std::cout << "  f3 = " << f3 << "\n";
+
+        // Шаг 6
+        findMin(x1, x2, x3, f1, f2, f3, Fmin, xmin);
+        std::cout << "  Текущий минимум: Fmin = " << Fmin
+            << " в точке xmin = " << xmin << "\n";
+
+        // Шаг 7
+        if (!computeInterpolationPolinom(x1, x2, x3, f1, f2, f3, xBar)) {
+            std::cout << "  Знаменатель обратился в нуль. Сброс к x1 = xmin\n";
+            x1 = xmin;
+            continue;
+        }
+
+        fxBar = func(xBar);
+        std::cout << "  Интерполяция: xBar = " << xBar
+            << ", f(xBar) = " << fxBar << "\n";
+
+        // Шаг 8
+        converged = checkConvergence(Fmin, fxBar, xmin, xBar, eps1, eps2, fxBar);
+
+        if (converged) {
+            std::cout << "\nУсловия окончания выполнены!\n";
+            std::cout << "Минимум найден в точке x* = " << xBar
+                << " со значением f(x*) = " << fxBar << "\n";
+            break;
+        }
+
+        // Шаг 8 (б) и (в)
+        if (xBar >= std::min(x1, x3) && xBar <= std::max(x1, x3)) {
+            // Случай б) - xBar внутри интервала
+            std::cout << "  xBar внутри интервала. Выбираем наилучшие точки.\n";
+
+            // Выбираем наилучшую точку и две соседние
+            vector<double> points = { x1, x2, x3, xBar };
+            vector<double> values = { f1, f2, f3, fxBar };
+
+            // Находим индекс минимального значения
+            int minIdx = 0;
+            for (int i = 1; i < 4; i++) {
+                if (values[i] < values[minIdx]) {
+                    minIdx = i;
+                }
+            }
+
+            // Сортируем точки
+            std::sort(points.begin(), points.end());
+
+            // Выбираем три точки: наилучшую и две соседние
+            // Для простоты берем все три точки и сортируем
+            x1 = points[0];
+            x2 = points[1];
+            x3 = points[2];
+
+            std::cout << "  Новые точки: x1 = " << x1 << ", x2 = " << x2
+                << ", x3 = " << x3 << "\n";
+        }
+        else {
+            // Случай в) - xBar вне интервала
+            std::cout << "  xBar вне интервала. Устанавливаем x1 = xBar\n";
+            x1 = xBar;
+        }
+
+        std::cout << "\n";
+    }
+
+    return 0;
+}
